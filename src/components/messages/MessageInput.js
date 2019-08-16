@@ -20,6 +20,7 @@ export default class MessageInput extends Component {
 
 	sendMessage = ()=>{
 		this.props.sendMessage(this.state.message)
+		console.log(this.state.message)
 
 	}
 

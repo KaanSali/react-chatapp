@@ -4,7 +4,6 @@ import {COMMUNITY_CHAT,MESSAGE_SENT, MESSAGE_RECIEVED,TYPING} from '../../Events
 import ChatHeading from './ChatHeading';
 import Messages from '../messages/Messages';
 import MessageInput from '../messages/MessageInput';
-import { MongoManager } from '../../server/MongoManager';
 
 export default class ChatContainer extends Component {
 	constructor(props) {
@@ -17,7 +16,7 @@ export default class ChatContainer extends Component {
 }
 	componentDidMount() {
 		const { socket } = this.props
-		socket.emit(COMMUNITY_CHAT, this.resetChat)
+		//socket.emit(COMMUNITY_CHAT, this.resetChat)
 	}
 
 	resetChat = (chat)=>{
@@ -27,7 +26,6 @@ export default class ChatContainer extends Component {
 	addChat = (chat, reset)=>{
 		const { socket } = this.props
 		const { chats } = this.state
-
 		const newChats = reset ? [chat] : [...chats, chat]
 		this.setState({chats:newChats, activeChat:reset ? chat : this.state.activeChat})
 
@@ -85,7 +83,7 @@ export default class ChatContainer extends Component {
 		this.setState({activeChat})
 	}
 	render() {
-		const { user, logout } = this.props
+		const { user, logout, socket } = this.props
 		const { chats, activeChat } = this.state
 		return (
 			<div className="container">
@@ -95,6 +93,8 @@ export default class ChatContainer extends Component {
 					user={user}
 					activeChat={activeChat}
 					setActiveChat={this.setActiveChat}
+					socket={socket}
+					resetChat = {this.addChat}
 					/>
 				<div className="chat-room-container">
 					{

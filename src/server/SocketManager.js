@@ -3,23 +3,23 @@ const io = require('./index.js').io
 const MongoClient = require('mongodb').MongoClient;
 const dbName = "ReactChatApp";
 const mongourl = "mongodb://localhost/";
-
+let cnt = 0;
 const { VERIFY_USER, USER_CONNECTED, USER_DISCONNECTED, 
 		LOGOUT, COMMUNITY_CHAT, MESSAGE_RECIEVED, MESSAGE_SENT,
-		TYPING  } = require('../Events')
+		TYPING, PRIVATE_CHAT  } = require('../Events')
 
 const { createUser, createMessage, createChat } = require('../Factories')
 
-let connectedUsers = { }
-
+let connectedUsers = { } 
+	
 let communityChat = createChat()
 
-module.exports = function(socket,mongodb){
+
+module.exports = async function(socket){
 	console.log("Socket Id:" + socket.id);
-	MongoClient.connect(mongourl + dbName, function (err, db) {
-        if (err)
-            throw err;
-            console.log("Mongo Bağlantısı başarıyla kuruldu")
+	const mongo = await MongoClient.connect(mongourl + dbName);
+	if(mongo)
+	console.log("Mongo Bağlantısı başarıyla kuruldu");
        
 	let sendMessageToChatFromUser;
 
@@ -33,7 +33,7 @@ module.exports = function(socket,mongodb){
 		}
 	})
 
-	socket.on(USER_CONNECTED, (user)=>{
+	socket.on(USER_CONNECTED, async (user)=>{
 		connectedUsers = addUser(connectedUsers, user)
 		socket.user = user 
 
@@ -47,10 +47,12 @@ module.exports = function(socket,mongodb){
 	
 	socket.on('disconnect', ()=>{
 		if("user" in socket){
-			connectedUsers = removeUser(connectedUsers, socket.user.name)
+			connectedUsers = removeUser(connectedUsers, socket.user.name) 
 
 			io.emit(USER_DISCONNECTED, connectedUsers)
 			console.log("Disconnect", connectedUsers);
+			mongo.close()
+
 		}
 	})
 
@@ -58,28 +60,31 @@ module.exports = function(socket,mongodb){
 		connectedUsers = removeUser(connectedUsers, socket.user.name)
 		io.emit(USER_DISCONNECTED, connectedUsers)
 		console.log("Disconnect", connectedUsers);
+		mongo.close()
+	}) 
 
-	})
-
-	socket.on(COMMUNITY_CHAT, (callback)=>{
+	socket.on(COMMUNITY_CHAT, (callback)=>{ 
 		callback(communityChat)
 	})
-
+	socket.on(PRIVATE_CHAT,(callback) =>{
+		let privateChat = createChat({name:socket.user.name+(cnt+1).toString()});
+		callback(privateChat)
+	})
 	socket.on(MESSAGE_SENT, ({chatId, message})=>{
 		sendMessageToChatFromUser(chatId, message)
-		myobj = {Id : chatId, message : message};
-		var dbo = db.db(dbName);
+		var date = new Date();
+		myobj = {Id : chatId, message : message,date: date};
+		var dbo = mongo.db(dbName);
                 dbo.collection(chatId).insertOne(myobj, function (err, res) {
                     if (err)
                         throw err;
-                    console.log("1 document inserted");
+                    console.log(JSON.stringify(myobj)+" inserted");
                 });
 	})
 
-	// socket.on(TYPING, ({chatId, isTyping})=>{
-	// 	sendTypingFromUser(chatId, isTyping)
-	// })
-});
+	 socket.on(TYPING, ({chatId, isTyping})=>{
+	 	sendTypingFromUser(chatId, isTyping)
+	 })
 } 
 
 function sendTypingToChat(user){

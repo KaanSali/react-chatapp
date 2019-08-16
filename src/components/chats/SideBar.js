@@ -3,11 +3,12 @@ import FAChevronDown from 'react-icons/lib/md/keyboard-arrow-down'
 import FAMenu from 'react-icons/lib/fa/list-ul'
 import FASearch from 'react-icons/lib/fa/search'
 import MdEject from 'react-icons/lib/md/eject'
+import {COMMUNITY_CHAT,MESSAGE_SENT, MESSAGE_RECIEVED,TYPING,PRIVATE_CHAT} from '../../Events'
 
 export default class SideBar extends Component{
-		
+	
 	render(){
-		const { chats, activeChat, user, setActiveChat, logout} = this.props
+		const { chats, activeChat, user, setActiveChat, logout, socket,resetChat} = this.props
 		return (
 			<div id="side-bar">
 					<div className="heading">
@@ -18,14 +19,13 @@ export default class SideBar extends Component{
 					</div>
 					<div className="search">
 						<i className="search-icon"><FASearch /></i>
-						<input placeholder="Sohbet Ara..." type="text"/>
-						<div className="plus"></div>
+						<input placeholder="Sohbet Ara..." type="text" id="search"/>
+						<div className="plus" onClick={() => {socket.emit(PRIVATE_CHAT, resetChat)}}></div>
 					</div>
 					<div 
 						className="users" 
 						ref='users' 
 						onClick={(e)=>{ (e.target === this.refs.user) && setActiveChat(null) }}>
-						
 						{
                             chats.map((chat)=>{
                                 if(chat.name){
@@ -33,7 +33,7 @@ export default class SideBar extends Component{
 									
                                     const user = chat.users.find(({name})=>{
                                         return name !== this.props.name
-                                    }) || { name:"Genel Sohbet" }
+                                    }) || { name:chat.name }
                                     const classNames = (activeChat && activeChat.id === chat.id) ? 'active' : ''
                                     
                                     return(
