@@ -4,17 +4,17 @@ import {COMMUNITY_CHAT,MESSAGE_SENT, MESSAGE_RECIEVED,TYPING} from '../../Events
 import ChatHeading from './ChatHeading';
 import Messages from '../messages/Messages';
 import MessageInput from '../messages/MessageInput';
+import { MongoManager } from '../../server/MongoManager';
 
 export default class ChatContainer extends Component {
 	constructor(props) {
 	  super(props);	
-	
+	  
 	  this.state = {
-	  	chats:[],
+		  chats:[],
 	  	activeChat:null
-	  };
-	}
-
+	};
+}
 	componentDidMount() {
 		const { socket } = this.props
 		socket.emit(COMMUNITY_CHAT, this.resetChat)
@@ -46,7 +46,6 @@ export default class ChatContainer extends Component {
 					chat.messages.push(message)
 				return chat
 			})
-
 			this.setState({chats:newChats})
 		}
 	}

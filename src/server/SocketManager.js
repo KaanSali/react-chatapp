@@ -1,5 +1,9 @@
 const io = require('./index.js').io
 
+const MongoClient = require('mongodb').MongoClient;
+const dbName = "ReactChatApp";
+const mongourl = "mongodb://localhost/";
+
 const { VERIFY_USER, USER_CONNECTED, USER_DISCONNECTED, 
 		LOGOUT, COMMUNITY_CHAT, MESSAGE_RECIEVED, MESSAGE_SENT,
 		TYPING  } = require('../Events')
@@ -10,9 +14,13 @@ let connectedUsers = { }
 
 let communityChat = createChat()
 
-module.exports = function(socket){
+module.exports = function(socket,mongodb){
 	console.log("Socket Id:" + socket.id);
-
+	MongoClient.connect(mongourl + dbName, function (err, db) {
+        if (err)
+            throw err;
+            console.log("Mongo Bağlantısı başarıyla kuruldu")
+       
 	let sendMessageToChatFromUser;
 
 	let sendTypingFromUser;
@@ -27,7 +35,7 @@ module.exports = function(socket){
 
 	socket.on(USER_CONNECTED, (user)=>{
 		connectedUsers = addUser(connectedUsers, user)
-		socket.user = user
+		socket.user = user 
 
 		sendMessageToChatFromUser = sendMessageToChat(user.name)
 		sendTypingFromUser = sendTypingToChat(user.name)
@@ -59,13 +67,20 @@ module.exports = function(socket){
 
 	socket.on(MESSAGE_SENT, ({chatId, message})=>{
 		sendMessageToChatFromUser(chatId, message)
+		myobj = {Id : chatId, message : message};
+		var dbo = db.db(dbName);
+                dbo.collection(chatId).insertOne(myobj, function (err, res) {
+                    if (err)
+                        throw err;
+                    console.log("1 document inserted");
+                });
 	})
 
-	socket.on(TYPING, ({chatId, isTyping})=>{
-		sendTypingFromUser(chatId, isTyping)
-	})
-
-}
+	// socket.on(TYPING, ({chatId, isTyping})=>{
+	// 	sendTypingFromUser(chatId, isTyping)
+	// })
+});
+} 
 
 function sendTypingToChat(user){
 	return (chatId, isTyping)=>{
